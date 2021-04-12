@@ -87,7 +87,8 @@ void getTime(char *t_str)
 
 void parseHeader(char *recvBuf, DNSHeader *req)
 {
-
+	
+	printf("BUffer: %s", recvBuf);
     char octect;
 
     req->id[0] = recvBuf[0];
