@@ -201,6 +201,7 @@ int fetchFromCache(DNS_QUESTION *q, DNS_ANS *ans){
 	return flag;
 }
 
+// Converts query name to URL
 void NameToString(char *str, DNS_QUESTION *q){
 	unsigned short i = 0, j = 0;
 	while (q->QNAME[i]){
@@ -215,6 +216,7 @@ void NameToString(char *str, DNS_QUESTION *q){
 	str[j] = '\0';
 }
 
+// Add a new entry to the cache
 void addCache(DNS_QUESTION *q, DNS_ANS *ans){
 	DNS_RECORD *entry = (DNS_RECORD*)malloc(sizeof(DNS_RECORD));
 
@@ -231,4 +233,297 @@ void addCache(DNS_QUESTION *q, DNS_ANS *ans){
 	printf("\n\t\t[ %s ADDED TO CACHE ]", q->QNAME);
 }
 
+// Fetch the Answer Iteratively
+void fetchIterative(DNS_QUESTION *q, DNS_ANS *ans){
+	printf("\n\t\t[ Searching ]");
+	FILE *fp;
+	char line[200];
+	char cmd[200];
+	char query[200];
+	char *temp;
 
+	// Convert the Query to URL in ASCII
+	NameToString(query, q);
+
+	printf("Query: %s\n", query);
+
+	unsigned short root = 1;
+	int pos = strlen(query) - 1;
+
+	char nameserver[50] = { 0 };
+	while (pos >= 0){
+		strcpy(cmd, "nslookup -type=ns ");		// Adding to nslookup
+		if (root == 1 || pos == 0){
+			strcat(cmd, query+pos);
+			root = 0;
+		}
+		else 
+			strcat(cmd, query + pos + + 1);
+		strcat(cmd, nameserver);
+
+		printf("Command Invoked: %s\n", cmd);
+
+		short NSExist = 0;
+		fp = popen(cmd, "r");					// Pipe to get command output 
+
+		while (fgets(line, 500, fp) != NULL){
+			if (strstr(line, "nameserver = ") != NULL){
+				NSExist = 1;					// Name Server exists as substring, hence present
+				break;
+			}
+			
+		}
+		pclose(fp);
+
+		if (!NSExist)
+			break;		// No Name Server found
+
+		temp = strtok(line, "=");
+		temp = strtok(NULL, "\n");
+		printf("%s\n", temp);				// Output Name Server
+		strcpy(nameserver, temp);
+
+		--pos;
+		while (pos > 0){
+			if (query[pos] == '.')
+				break;
+			--pos;
+		}
+	}
+
+	printf("NameServer: %s\n", nameserver);
+	strcpy(cmd, "nslookup -type=A ");
+	strcat(cmd, query);		// Adding URL to command
+	strcat(cmd, nameserver);	// Adding Nameserver to get info from
+	printf("Command Invoked: %s\n", nameserver);
+	
+	fp = popen(cmd, "r");		// Pipe to get command output
+	unsigned short c = 0, NF = 0;		
+
+	while (fgets(line, 500, fp) != NULL){
+
+		// Means it wasn't found
+		if (line[0] == "*"){
+			NF = 1;		// Not Found Flag
+			break;
+		}
+		if (strlen(line) >= 7){
+			if (strncmp(line, "Address", 7) == 0){
+				++c;
+				if (c == 2)
+					break;
+			}
+		}
+	}
+	pclose(fp);		// Close pipe for command
+
+	temp = strtok(line,": ");
+	temp = strtok(NULL, "\n");
+
+	char IP[50];
+	strcpy(IP, temp);
+	printf("IP Address: %s\n", IP);
+
+	if (NF)
+		ans->RDLENGTH = 0;	// Nothing Found
+
+	else {
+		
+		if (q->QTYPE[0] == 0){
+			// A Query
+			if (q->QTYPE[1] == 0x1){
+				ans->RDLENGTH = 4;			// As its IPv4
+				parseIPv4(ans->RDATA, IP);
+			}
+
+			// AAAA Query
+			else if (q->QTYPE[1] == 0x1c){
+				ans->RDLENGTH = 16;
+				parseIPv6(ans->RDATA, IP);
+			}
+
+			// NS Query
+			else if (q->QTYPE[1] == 0x2){
+				
+			}
+			
+			// CNAME Query
+			else if (q->QTYPE[1] == 0x3){
+				
+			}
+		}
+		
+		// Add to the cache
+		addCache(q, ans);
+	}
+}
+
+void resolveQuery(DNS_QUESTION *q, DNS_ANS *ans){
+	ans->TTL = 30;
+	
+	// Check if its not in the cache
+	if (fetchFromCache(q, ans) == 0)
+		fetchIterative(q, ans);
+}
+
+// Packs a DNS Packet Header
+void assignHeader(char *buffer, DNS_HEADER *header, unsigned short RDLENGTH){
+	
+	// Assign ID
+	buffer[0] = header->ID[0];
+	buffer[1] = header->ID[1];
+
+	// Pack the 3rd byte
+	char temp = 1;	//QR = 1 as it is a Query Response
+
+	temp = temp << 4;
+	temp = temp | (header->OPCODE);	// Assign OPCODE
+
+	temp = temp << 1;
+	temp = temp | (header->AA);		// Assign AA
+
+	temp = temp << 1;
+	temp = temp | (header->TC);		// Assign TC
+
+	temp = temp << 1;
+	temp = temp | (header->RD);		// Assign RD
+
+	buffer[2] = temp;
+
+	temp = 0;						// Assign RA as 0
+	
+	temp = temp << 7;
+	temp = temp | (header->RCODE);	// ASSIGN RCODE
+
+	buffer[3] = temp;
+
+	buffer[5] = header->QDCOUNT;
+	buffer[7] = (RDLENGTH == 0) ? 0 : 1;
+	buffer[9] = header->NSCOUNT;
+	buffer[11] = header->ARCOUNT;
+}
+
+void assignQuestion(char *qField, DNS_QUESTION *q){
+	unsigned i = 0;
+	// Get the Question Field
+	while (i < q->qsize){
+		qField[i] = q->QNAME[i];
+		++i;
+	}
+
+	qField[i++] = q->QTYPE[0];
+	qField[i++] = q->QTYPE[1];
+	
+	qField[i++] = q->QCLASS[0];
+	qField[i++] = q->QCLASS[1];
+}
+
+void assignAnswer(char *ansField, DNS_QUESTION *q, DNS_ANS *ans){
+	unsigned i = 0;
+	while (i < q->qsize){
+		ansField[i] = q->QNAME[i];
+		++i;
+	}
+
+	ansField[i++] = q->QTYPE[0];
+	ansField[i++] = q->QTYPE[1];
+
+	ansField[i++] = q->QCLASS[0];
+	ansField[i++] = q->QCLASS[1];
+
+	ansField[i++] = 0;
+	ansField[i++] = 0;
+	ansField[i++] = 0;
+	ansField[i++] = ans->TTL;
+
+	ansField[i++] = 0;
+	ansField[i++] = ans->RDLENGTH;
+
+	for (unsigned j = 0; j < ans->RDLENGTH; j++)
+		ansField[i++] = ans->RDATA[j];
+}
+
+unsigned createResponse(DNS_HEADER *header, DNS_QUESTION *q, DNS_ANS *ans, char *buffer){
+	memset(buffer, 0, SIZE);
+
+	unsigned pos = 0;
+
+	assignHeader(buffer, header, ans->RDLENGTH);
+	pos = 12;		// Header is 12 bytes
+
+	assignQuestion(buffer + pos, q);
+	pos += (q->qsize) + 4;
+
+	if (ans->RDLENGTH != 0){
+		assignAnswer(buffer + pos, q, ans);
+		pos += (q->qsize) + 10 + (ans->RDLENGTH);
+	}
+	return pos;
+}
+
+void *TTLHandler(){
+	pthread_mutex_lock(&lock_cache);
+	DNS_RECORD *entry, *temp;
+
+	while (entry != NULL){
+		entry->A.TTL -= 1;
+
+		if (entry->A.TTL == 0){
+			if (entry->next != NULL)
+				(entry->next)->prev = entry->prev;
+			
+			if (entry->prev == NULL)
+				Cache = entry->next;
+			else
+				(entry->prev)->next = entry->next;
+			temp = entry;
+			printf("\n\t\t[ Deleting Cache Entry : %s ]\n", temp->Q.QNAME);
+			entry = entry->next;
+			free (temp);
+		}
+		else
+			entry = entry->next;
+	}
+	pthread_mutex_unlock(&lock_cache);
+}
+
+void *cacheHandler(){
+	clock_t start, end;
+	while (1){
+		start = clock() / CLOCKS_PER_SEC;
+		while (1){
+			end = clock() / CLOCKS_PER_SEC;
+			if (end - start >= 1)
+				break;
+		}
+		pthread_t T_ID;
+		pthread_create(&T_ID, NULL, TTLHandler, NULL);
+	}
+}
+
+void *handleLookup(void *ARG){
+	HL_ARG *arg = (HL_ARG *)ARG;
+
+	DNS_HEADER requestHeader;
+	DNS_QUESTION requestQuestion;
+	DNS_ANS ans;
+
+	parseHeader(arg->buf, &requestHeader);
+	parseQuestion(arg->buf + 12, &requestQuestion);
+
+	resolveQuery(&requestQuestion, &ans);
+
+	char buffer[SIZE];
+	unsigned int packetSize;
+	packetSize = createResponse(&requestHeader, &requestQuestion, &ans, buffer);
+
+	if (sendto(arg->sock, buffer, packetSize, 0, (struct sockaddr *)&(arg->clientAddr), sizeof(arg->clientAddr)) < 0 )
+		printf("Error in sendto()");
+	else
+		printf("\n\t\t[ Response has beeen Sent]\n");
+	free(arg);
+}
+
+int main(){
+	printf("Hi");
+}
