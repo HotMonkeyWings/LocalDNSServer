@@ -1,0 +1,13 @@
+Server:		j.gtld-servers.net.
+Address:	192.48.79.30#53
+
+Non-authoritative answer:
+*** Can't find reddit.com: No answer
+
+Authoritative answers can be found from:
+reddit.com	nameserver = ns-557.awsdns-05.net.
+reddit.com	nameserver = ns-378.awsdns-47.com.
+reddit.com	nameserver = ns-1029.awsdns-00.org.
+reddit.com	nameserver = ns-1887.awsdns-43.co.uk.
+ns-378.awsdns-47.com	internet address = 205.251.193.122
+

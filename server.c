@@ -12,6 +12,7 @@
 #include <pthread.h>
 #include <inttypes.h>
 
+#include "DNS.c"		// Contains nslookup functions
 #define SIZE 2048	// Size of Buffers
 #define QSIZE 100	// Size of Queries
 
@@ -109,8 +110,52 @@ void parseHeader(char *buffer, DNS_HEADER *header){
 	header->ARCOUNT += buffer[11];
 }
 
-// Parse Question from question buffer
+
+// Replace a substring in a string
+char *str_replace(char *orig, char *rep, char *with) {
+    char *result; // the return string
+    char *ins;    // the next insert point
+    char *tmp;    // varies
+    int len_rep;  // length of rep (the string to remove)
+    int len_with; // length of with (the string to replace rep with)
+    int len_front; // distance between rep and end of last rep
+    int count;    // number of replacements
+
+    // sanity checks and initialization
+    if (!orig || !rep)
+        return NULL;
+    len_rep = strlen(rep);
+    if (len_rep == 0)
+        return NULL; // empty rep causes infinite loop during count
+    if (!with)
+        with = "";
+    len_with = strlen(with);
+
+    // count the number of replacements needed
+    ins = orig;
+    for (count = 0; tmp = strstr(ins, rep); ++count) {
+        ins = tmp + len_rep;
+    }
+
+    tmp = result = malloc(strlen(orig) + (len_with - len_rep) * count + 1);
+
+    if (!result)
+        return NULL;
+
+    while (count--) {
+        ins = strstr(orig, rep);
+        len_front = ins - orig;
+        tmp = strncpy(tmp, orig, len_front) + len_front;
+        tmp = strcpy(tmp, with) + len_with;
+        orig += len_front + len_rep; // move to next "end of rep"
+    }
+    strcpy(tmp, orig);
+    return result;
+}
+// Parse Question from Question buffer
 void parseQuestion(char *qs, DNS_QUESTION *q){
+
+	// Fetch the Question
 	int i = 0;
 	while (qs[i])
 		i += qs[i] + 1;
@@ -126,6 +171,57 @@ void parseQuestion(char *qs, DNS_QUESTION *q){
 	q->QCLASS[1] = qs[q->qsize + 3];
 }
 
+void check_4(char final[4], char *octet){
+	strcpy(final, "");
+
+	if (strlen(octet) == 1){
+		strcat(final, "000");
+		strcat(final, octet);
+	}
+	else if (strlen(octet) == 2){
+		strcat(final, "00");
+		strcat(final, octet);
+	}
+	else if (strlen(octet) == 3){
+		strcat(final, "0");
+		strcat(final, octet);
+	}
+	else
+		strcat(final, octet);
+}
+
+char *substr(const char *src, int m, int n){
+	int len = n - m;
+	char *dest = (char*)malloc(sizeof(char) * (len + 1));
+	for (int i = m; i < n && ((*src + i) != '\0'); i++){
+		*dest = *(src + i);
+		dest++;
+	}
+	*dest = '\0';
+	return dest-len;
+}
+
+int cname( char *RDATA, char re[100], char website[100]){
+	char r[100], *token;
+	strcpy(r, re);
+	int i = 0, loop = 0;
+	token = strtok(r, ".");
+	while (token != NULL){
+		short m = strlen(token);
+		RDATA[i] = m;
+		i++;
+		loop = 0;
+		while (token[loop] != '\0'){
+			RDATA[i] = token[loop];
+			loop++;
+			i++;
+		}
+		token = strtok(NULL, ".");
+	}
+
+	RDATA[i++] = 0;
+	return i;
+}
 // Parse IPv4 to RDATA
 void parseIPv4(char *RDATA, char *ip){
 	char *temp;
@@ -145,28 +241,43 @@ void parseIPv4(char *RDATA, char *ip){
 }
 
 // Parse IPv6 to RDATA
-void parseIPv6(char *RDATA, char *ip){
-	char *temp;
+void parseIPv6(char *RDATA, char *IP2){
+	char *IP, *octet;
+	char final[4], format[20];
+
+	if (strstr(IP2,"::")){
+		IP = str_replace(IP2, "::", ":0000:0000:");
+		octet = strtok(IP, ":");
+	}
+	else {
+		octet = strtok(IP2, ":");
+	}
+	check_4(final, octet);
 	char byte[2];
 	char *ptr;
-
-	temp = strtok(ip, ":");
-
-	RDATA[0] = strtoumax(temp, &ptr, 16);
+	RDATA[0] = strtoumax(substr(final, 0, 2), &ptr, 16); 
+	RDATA[1] = strtoumax(substr(final, 2, 4), &ptr, 16);
 
 	short i = 1;
-	for (short i = 1; i < 15; i++){
-		temp = strtok(NULL, ":");
-		RDATA[i] = strtoumax(temp, &ptr, 16);
+	for (short i = 1; i < 6; i++){
+		octet = strtok(NULL,":");
+		check_4(final, octet);
+		RDATA[i*2] = strtoumax(substr(final, 0, 2), &ptr, 16);
+		RDATA[i*2 + 1] = strtoumax(substr(final, 2, 4), &ptr, 16);
 	}
 
-	temp = strtok(NULL, "\0");
-	RDATA[15] = strtoumax(temp, &ptr, 16);
+	octet = strtok(NULL, "\0");
+	check_4(final, octet);
+
+	printf("%s\n", octet);
+	RDATA[14] = strtoumax(substr(final, 0, 2), &ptr, 16);
+	RDATA[15] = strtoumax(substr(final, 2, 4), &ptr, 16);
+
 }
 
 // Check if Cache has the Query Request's Response
 int fetchFromCache(DNS_QUESTION *q, DNS_ANS *ans){
-	printf("\n\t\t[ CHECKING CACHE ]\n");
+	printf("\n[ CHECKING CACHE ]\n");
 	DNS_RECORD *entry = Cache;
 	int flag = 0;
 
@@ -182,10 +293,10 @@ int fetchFromCache(DNS_QUESTION *q, DNS_ANS *ans){
 						break;
 					}
 
-				if (matching){
-					*ans = entry->A;
-					flag=1;
-					break;
+					if (matching){
+						*ans = entry->A;
+						flag = 1;
+						break;
 					}
 				}
 			}
@@ -194,9 +305,9 @@ int fetchFromCache(DNS_QUESTION *q, DNS_ANS *ans){
 	}
 
 	if (!flag)
-		printf("\n\t\t[ CACHE MISS ]");
+		printf("\n[ CACHE MISS ]\n");
 	else
-		printf("\n\t\t[ CACHE HIT ]");
+		printf("\n[ CACHE HIT ]\n");
 	
 	return flag;
 }
@@ -230,140 +341,103 @@ void addCache(DNS_QUESTION *q, DNS_ANS *ans){
 		Cache->prev = entry;
 	}
 	Cache = entry;
-	printf("\n\t\t[ %s ADDED TO CACHE ]", q->QNAME);
+	printf("\n[ NEW ENTRY ADDED TO CACHE ]\n");
 }
 
 // Fetch the Answer Iteratively
-void fetchIterative(DNS_QUESTION *q, DNS_ANS *ans){
-	printf("\n\t\t[ Searching ]");
-	FILE *fp;
-	char line[200];
-	char cmd[200];
-	char query[200];
-	char *temp;
+int fetchIterative(DNS_QUESTION *q, DNS_ANS *ans){
+	ans->TTL = 30;
+	int n = 1;
+	char web[100], website[100], result[100] = "", fname[100]="", *token, w[100], path[100];
+	NameToString(web, q);			// Get website name
+	strcpy(w, web);
+	strcat(fname, "cache/");
+	strcat(fname, web);				// Make a cache entry for website 
 
-	// Convert the Query to URL in ASCII
-	NameToString(query, q);
-
-	printf("Query: %s\n", query);
-
-	unsigned short root = 1;
-	int pos = strlen(query) - 1;
-
-	char nameserver[50] = { 0 };
-	while (pos >= 0){
-		strcpy(cmd, "nslookup -type=ns ");		// Adding to nslookup
-		if (root == 1 || pos == 0){
-			strcat(cmd, query+pos);
-			root = 0;
+	// For AAAA Queries
+	if (q->QTYPE[1] == 0x1C){
+		nslookup_handle(result, web, 1);
+		printf("Results: %s\n", result);
+		if (strncmp(result, "not found", 9) == 0)
+			ans->RDLENGTH = 0;
+		else {
+			ans->RDLENGTH = 16;
+			parseIPv6(ans->RDATA, result);
 		}
-		else 
-			strcat(cmd, query + pos + + 1);
-		strcat(cmd, nameserver);
 
-		printf("Command Invoked: %s\n", cmd);
-
-		short NSExist = 0;
-		fp = popen(cmd, "r");					// Pipe to get command output 
-
-		while (fgets(line, 500, fp) != NULL){
-			if (strstr(line, "nameserver = ") != NULL){
-				NSExist = 1;					// Name Server exists as substring, hence present
-				break;
-			}
-			
-		}
-		pclose(fp);
-
-		if (!NSExist)
-			break;		// No Name Server found
-
-		temp = strtok(line, "=");
-		temp = strtok(NULL, "\n");
-		printf("%s\n", temp);				// Output Name Server
-		strcpy(nameserver, temp);
-
-		--pos;
-		while (pos > 0){
-			if (query[pos] == '.')
-				break;
-			--pos;
-		}
-	}
-
-	printf("NameServer: %s\n", nameserver);
-	strcpy(cmd, "nslookup -type=A ");
-	strcat(cmd, query);		// Adding URL to command
-	strcat(cmd, nameserver);	// Adding Nameserver to get info from
-	printf("Command Invoked: %s\n", nameserver);
-	
-	fp = popen(cmd, "r");		// Pipe to get command output
-	unsigned short c = 0, NF = 0;		
-
-	while (fgets(line, 500, fp) != NULL){
-
-		// Means it wasn't found
-		if (line[0] == "*"){
-			NF = 1;		// Not Found Flag
-			break;
-		}
-		if (strlen(line) >= 7){
-			if (strncmp(line, "Address", 7) == 0){
-				++c;
-				if (c == 2)
-					break;
-			}
-		}
-	}
-	pclose(fp);		// Close pipe for command
-
-	temp = strtok(line,": ");
-	temp = strtok(NULL, "\n");
-
-	char IP[50];
-	strcpy(IP, temp);
-	printf("IP Address: %s\n", IP);
-
-	if (NF)
-		ans->RDLENGTH = 0;	// Nothing Found
-
-	else {
-		
-		if (q->QTYPE[0] == 0){
-			// A Query
-			if (q->QTYPE[1] == 0x1){
-				ans->RDLENGTH = 4;			// As its IPv4
-				parseIPv4(ans->RDATA, IP);
-			}
-
-			// AAAA Query
-			else if (q->QTYPE[1] == 0x1c){
-				ans->RDLENGTH = 16;
-				parseIPv6(ans->RDATA, IP);
-			}
-
-			// NS Query
-			else if (q->QTYPE[1] == 0x2){
-				
-			}
-			
-			// CNAME Query
-			else if (q->QTYPE[1] == 0x3){
-				
-			}
-		}
-		
-		// Add to the cache
 		addCache(q, ans);
 	}
+
+	// For A Queries
+	else if(q->QTYPE[1] == 0x1){
+		nslookup_handle(result, web, 2);
+		printf("Result: %s\n", result);
+		if (strncmp(result, "not found", 9) == 0)
+			ans->RDLENGTH = 0;
+		else {
+			ans->RDLENGTH = 4;
+			parseIPv4(ans->RDATA, result);
+		}
+		addCache(q, ans);
+	}
+
+	// For CNAME Queries
+	else if(q->QTYPE[1] == 0x5){
+		strcpy(website, web);
+		token = strtok(w, ".");
+		int i = strncmp(token, "www", 3);
+		if (!i){
+			token = strtok(NULL, "\0");
+			strcpy(website, token);
+		}
+
+		printf("Result: %s %d\n", website, i);
+
+		nslookup_handle(result, web, 3);
+		if (strncmp(result, "not found", 9) == 0)
+			ans->RDLENGTH = 0;
+		else{
+			int r = cname(ans->RDATA, result, website);
+			ans->RDLENGTH = r;
+			printf("Result : %s %i\n", website, r);
+			return 666;
+		}
+	}
+
+	// For NS Queries
+	else if(q->QTYPE[1] == 0x2){
+		strcpy(website, web);
+		token = strtok(w, ".");
+		int i = strncmp(token, "www", 3);
+		if (!i){
+			token = strtok(NULL, "\0");
+			strcpy(website, token);
+		}
+
+		printf("Result: %s %d\n", website, i);
+
+		nslookup_handle(result, web, 4);
+		if (strncmp(result, "not found", 9) == 0)
+			ans->RDLENGTH = 0;
+		else{
+			int r = cname(ans->RDATA, result, website);
+			ans->RDLENGTH = r;
+			printf("Result : %s %i\n", website, r);
+			return 666;
+		}
+
+	}
+	return n;
+
 }
 
-void resolveQuery(DNS_QUESTION *q, DNS_ANS *ans){
+int resolveQuery(DNS_QUESTION *q, DNS_ANS *ans){
 	ans->TTL = 30;
-	
+	int n = 1;	
 	// Check if its not in the cache
 	if (fetchFromCache(q, ans) == 0)
-		fetchIterative(q, ans);
+		n = fetchIterative(q, ans);
+	return n;
 }
 
 // Packs a DNS Packet Header
@@ -461,9 +535,11 @@ unsigned createResponse(DNS_HEADER *header, DNS_QUESTION *q, DNS_ANS *ans, char 
 	return pos;
 }
 
+// Searching the Cache
 void *TTLHandler(){
 	pthread_mutex_lock(&lock_cache);
 	DNS_RECORD *entry, *temp;
+	entry = Cache;	// To iterate through the cache
 
 	while (entry != NULL){
 		entry->A.TTL -= 1;
@@ -477,7 +553,7 @@ void *TTLHandler(){
 			else
 				(entry->prev)->next = entry->next;
 			temp = entry;
-			printf("\n\t\t[ Deleting Cache Entry : %s ]\n", temp->Q.QNAME);
+			printf("\n[ DELETING CACHE ENTRY : %s ]\n", temp->Q.QNAME);
 			entry = entry->next;
 			free (temp);
 		}
@@ -507,11 +583,14 @@ void *handleLookup(void *ARG){
 	DNS_HEADER requestHeader;
 	DNS_QUESTION requestQuestion;
 	DNS_ANS ans;
-
 	parseHeader(arg->buf, &requestHeader);
 	parseQuestion(arg->buf + 12, &requestQuestion);
 
-	resolveQuery(&requestQuestion, &ans);
+	int n = resolveQuery(&requestQuestion, &ans);
+	if(requestQuestion.QTYPE[1] == 0x2){
+
+		DNS_ANS ans[n];
+	}
 
 	char buffer[SIZE];
 	unsigned int packetSize;
@@ -520,10 +599,70 @@ void *handleLookup(void *ARG){
 	if (sendto(arg->sock, buffer, packetSize, 0, (struct sockaddr *)&(arg->clientAddr), sizeof(arg->clientAddr)) < 0 )
 		printf("Error in sendto()");
 	else
-		printf("\n\t\t[ Response has beeen Sent]\n");
+		printf("\n[ RESPONSE SENT ]\n");
 	free(arg);
 }
 
-int main(){
-	printf("Hi");
+
+int main(int argc, char *argv[]){
+	struct sockaddr_in server_addr, client_addr;
+	int sock, newsock, opt = 1;
+	int client_addr_len = sizeof(client_addr);
+	char recvBuff[SIZE];
+	int recvLen;
+
+	Cache = NULL;
+	pthread_mutex_init(&lock_cache, NULL);
+
+	unsigned short portno;
+	// Check if port number was given or not
+	if (argc < 2){
+		printf("\nPort Number: ");
+		scanf("%hu", &portno);
+	}
+	else 
+		portno = atoi(argv[1]);
+
+	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0){
+		perror("Socket Error");
+		return -1;
+	}
+
+	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) < 0){
+		perror("Error at Setting sock options");
+		return -1;
+	}
+
+	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_port = htons(portno);
+
+	if (bind(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0){
+		perror("Error at BIND");
+		return 1;
+	}
+
+	printf("Server is on PORT: %hu\n", portno);
+
+	pthread_t T1;
+	pthread_create(&T1, NULL,cacheHandler, NULL); 
+
+	HL_ARG *arg;
+	while (1){
+		if ((recvLen = recvfrom(sock, recvBuff, SIZE - 1, 0, (struct sockaddr *)&client_addr, &client_addr_len)) < 0)
+			perror("Error at recvfrom");
+		else{
+			arg = (HL_ARG *)malloc(sizeof(HL_ARG));
+			for (int i = 0; i < SIZE; i++)
+				arg->buf[i] = recvBuff[i];
+			arg->sock = sock;
+			arg->clientAddr = client_addr;
+			pthread_t T2;
+			pthread_create(&T2, NULL, handleLookup, (void*)arg);
+
+			printf("\n[ REQUEST GENERATED ]\n");
+		}
+	}
+
+	return 0;
 }
