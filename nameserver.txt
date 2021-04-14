@@ -1,14 +1,13 @@
-Server:		ns1.registry.in.
-Address:	37.209.192.12#53
+Server:		l.gtld-servers.net.
+Address:	192.41.162.30#53
 
 Non-authoritative answer:
-*** Can't find cnet.nitc.ac.in: No answer
+*** Can't find www.reddit.com: No answer
 
 Authoritative answers can be found from:
-nitc.ac.in	nameserver = ebox.nitc.ac.in.
-nitc.ac.in	nameserver = dns.nitc.ac.in.
-nitc.ac.in	nameserver = cncdns.nitc.ac.in.
-cncdns.nitc.ac.in	internet address = 14.139.185.116
-ebox.nitc.ac.in	internet address = 14.139.185.118
-dns.nitc.ac.in	internet address = 14.139.185.117
+reddit.com	nameserver = ns-557.awsdns-05.net.
+reddit.com	nameserver = ns-378.awsdns-47.com.
+reddit.com	nameserver = ns-1029.awsdns-00.org.
+reddit.com	nameserver = ns-1887.awsdns-43.co.uk.
+ns-378.awsdns-47.com	internet address = 205.251.193.122
 
