@@ -18,8 +18,8 @@ int ends_with(char *a,char *b){
 }
 void getRoot(char root[100]){
     char line[100];
-    system("nslookup -type=ns . > roots.txt");
-    FILE *fp = fopen("roots.txt", "r");
+    system("nslookup -type=ns . > root.txt");
+    FILE *fp = fopen("root.txt", "r");
     while (fscanf(fp,"%s",line)!=EOF)
     {
         if(ends_with(line,".root-servers.net."))
@@ -118,13 +118,13 @@ void get_main_server(char result[100],char domain[100], char website[100], int t
     strcat(cmd2, "cache/"); 
     strcat(cmd2, website);
     
-    if(type==1)
+    if(type == 1)
     {
         strcat(cmd, "-aaaa");
         strcat(cmd2, "-aaaa");
     }
         
-    if(type ==2)
+    if(type == 2)
     {
         strcat(cmd, "-a");
         strcat(cmd2, "-a");
@@ -176,7 +176,7 @@ void get_main_server(char result[100],char domain[100], char website[100], int t
             {
                 token=strtok(path, " = ");
                 token=strtok(NULL, " = ");
-                token[strcspn(token, "\n")] = 0;
+                token[strcspn(token, "\n")] = '\0';
                 strcat(result, token);
                 strcat(result, ";");         
             }

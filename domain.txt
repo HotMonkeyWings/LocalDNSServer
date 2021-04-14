@@ -1,36 +1,26 @@
-Server:		m.root-servers.net.
-Address:	202.12.27.33#53
+Server:		l.root-servers.net.
+Address:	199.7.83.42#53
 
 Non-authoritative answer:
-*** Can't find com.: No answer
+*** Can't find nitc.ac.in.: No answer
 
 Authoritative answers can be found from:
-com	nameserver = j.gtld-servers.net.
-com	nameserver = k.gtld-servers.net.
-com	nameserver = d.gtld-servers.net.
-com	nameserver = e.gtld-servers.net.
-com	nameserver = a.gtld-servers.net.
-com	nameserver = f.gtld-servers.net.
-com	nameserver = m.gtld-servers.net.
-com	nameserver = c.gtld-servers.net.
-com	nameserver = h.gtld-servers.net.
-com	nameserver = l.gtld-servers.net.
-com	nameserver = i.gtld-servers.net.
-com	nameserver = g.gtld-servers.net.
-com	nameserver = b.gtld-servers.net.
-a.gtld-servers.net	internet address = 192.5.6.30
-b.gtld-servers.net	internet address = 192.33.14.30
-c.gtld-servers.net	internet address = 192.26.92.30
-d.gtld-servers.net	internet address = 192.31.80.30
-e.gtld-servers.net	internet address = 192.12.94.30
-f.gtld-servers.net	internet address = 192.35.51.30
-g.gtld-servers.net	internet address = 192.42.93.30
-h.gtld-servers.net	internet address = 192.54.112.30
-i.gtld-servers.net	internet address = 192.43.172.30
-j.gtld-servers.net	internet address = 192.48.79.30
-k.gtld-servers.net	internet address = 192.52.178.30
-l.gtld-servers.net	internet address = 192.41.162.30
-m.gtld-servers.net	internet address = 192.55.83.30
-a.gtld-servers.net	has AAAA address 2001:503:a83e::2:30
-b.gtld-servers.net	has AAAA address 2001:503:231d::2:30
+in	nameserver = ns1.registry.in.
+in	nameserver = ns2.registry.in.
+in	nameserver = ns3.registry.in.
+in	nameserver = ns4.registry.in.
+in	nameserver = ns5.registry.in.
+in	nameserver = ns6.registry.in.
+ns1.registry.in	internet address = 37.209.192.12
+ns2.registry.in	internet address = 37.209.194.12
+ns3.registry.in	internet address = 37.209.196.12
+ns4.registry.in	internet address = 37.209.198.12
+ns5.registry.in	internet address = 156.154.100.20
+ns6.registry.in	internet address = 156.154.101.20
+ns1.registry.in	has AAAA address 2001:dcd:1::12
+ns2.registry.in	has AAAA address 2001:dcd:2::12
+ns3.registry.in	has AAAA address 2001:dcd:3::12
+ns4.registry.in	has AAAA address 2001:dcd:4::12
+ns5.registry.in	has AAAA address 2001:502:2eda::20
+ns6.registry.in	has AAAA address 2001:502:ad09::20
 

@@ -391,8 +391,6 @@ int fetchIterative(DNS_QUESTION *q, DNS_ANS *ans){
 			strcpy(website, token);
 		}
 
-		printf("Result: %s %d\n", website, i);
-
 		nslookup_handle(result, web, 3);
 		if (strncmp(result, "not found", 9) == 0)
 			ans->RDLENGTH = 0;
@@ -414,7 +412,6 @@ int fetchIterative(DNS_QUESTION *q, DNS_ANS *ans){
 			strcpy(website, token);
 		}
 
-		printf("Result: %s %d\n", website, i);
 
 		nslookup_handle(result, web, 4);
 		if (strncmp(result, "not found", 9) == 0)
