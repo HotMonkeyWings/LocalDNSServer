@@ -55,7 +55,6 @@ typedef struct {
 typedef struct DNS_RECORD{
 	DNS_QUESTION Q;
 	DNS_ANS A;
-
 	struct DNS_RECORD *next;
 	struct DNS_RECORD *prev;
 } DNS_RECORD;
@@ -171,6 +170,7 @@ void parseQuestion(char *qs, DNS_QUESTION *q){
 	q->QCLASS[1] = qs[q->qsize + 3];
 }
 
+// Fills in empty IPv6 Addresses
 void check_4(char final[4], char *octet){
 	strcpy(final, "");
 
@@ -201,6 +201,7 @@ char *substr(const char *src, int m, int n){
 	return dest-len;
 }
 
+// Packs CNAME 
 int cname( char *RDATA, char re[100], char website[100]){
 	char r[100], *token;
 	strcpy(r, re);
