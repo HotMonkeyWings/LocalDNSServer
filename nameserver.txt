@@ -2,7 +2,7 @@ Server:		l.gtld-servers.net.
 Address:	192.41.162.30#53
 
 Non-authoritative answer:
-*** Can't find www.reddit.com: No answer
+*** Can't find reddit.com: No answer
 
 Authoritative answers can be found from:
 reddit.com	nameserver = ns-557.awsdns-05.net.
