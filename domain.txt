@@ -1,36 +1,20 @@
-Server:		f.root-servers.net.
-Address:	192.5.5.241#53
+Server:		192.168.18.1
+Address:	192.168.18.1#53
 
 Non-authoritative answer:
-*** Can't find com.: No answer
-
-Authoritative answers can be found from:
-com	nameserver = l.gtld-servers.net.
-com	nameserver = f.gtld-servers.net.
-com	nameserver = k.gtld-servers.net.
-com	nameserver = m.gtld-servers.net.
 com	nameserver = e.gtld-servers.net.
+com	nameserver = k.gtld-servers.net.
+com	nameserver = b.gtld-servers.net.
+com	nameserver = c.gtld-servers.net.
 com	nameserver = d.gtld-servers.net.
 com	nameserver = h.gtld-servers.net.
-com	nameserver = b.gtld-servers.net.
+com	nameserver = m.gtld-servers.net.
 com	nameserver = i.gtld-servers.net.
-com	nameserver = a.gtld-servers.net.
-com	nameserver = c.gtld-servers.net.
-com	nameserver = j.gtld-servers.net.
 com	nameserver = g.gtld-servers.net.
-a.gtld-servers.net	internet address = 192.5.6.30
-b.gtld-servers.net	internet address = 192.33.14.30
-c.gtld-servers.net	internet address = 192.26.92.30
-d.gtld-servers.net	internet address = 192.31.80.30
-e.gtld-servers.net	internet address = 192.12.94.30
-f.gtld-servers.net	internet address = 192.35.51.30
-g.gtld-servers.net	internet address = 192.42.93.30
-h.gtld-servers.net	internet address = 192.54.112.30
-i.gtld-servers.net	internet address = 192.43.172.30
-j.gtld-servers.net	internet address = 192.48.79.30
-k.gtld-servers.net	internet address = 192.52.178.30
-l.gtld-servers.net	internet address = 192.41.162.30
-m.gtld-servers.net	internet address = 192.55.83.30
-a.gtld-servers.net	has AAAA address 2001:503:a83e::2:30
-b.gtld-servers.net	has AAAA address 2001:503:231d::2:30
+com	nameserver = l.gtld-servers.net.
+com	nameserver = f.gtld-servers.net.
+com	nameserver = a.gtld-servers.net.
+com	nameserver = j.gtld-servers.net.
+
+Authoritative answers can be found from:
 

@@ -1,0 +1,16 @@
+Server:		192.168.18.1
+Address:	192.168.18.1#53
+
+Non-authoritative answer:
+*** Can't find yahoo.in: No answer
+
+Authoritative answers can be found from:
+yahoo.in
+	origin = hidden-master.yahoo.com
+	mail addr = hostmaster.yahoo-inc.com
+	serial = 2021040201
+	refresh = 28800
+	retry = 3600
+	expire = 1814400
+	minimum = 600
+

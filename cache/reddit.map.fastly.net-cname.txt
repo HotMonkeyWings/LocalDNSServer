@@ -2,7 +2,7 @@ Server:		192.168.18.1
 Address:	192.168.18.1#53
 
 Non-authoritative answer:
-www.reddit.com	canonical name = reddit.map.fastly.net.
+*** Can't find reddit.map.fastly.net: No answer
 
 Authoritative answers can be found from:
 fastly.net

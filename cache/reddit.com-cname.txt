@@ -1,5 +1,16 @@
-Server:		ns-557.awsdns-05.net.
-Address:	205.251.194.45#53
+Server:		192.168.18.1
+Address:	192.168.18.1#53
 
+Non-authoritative answer:
 *** Can't find reddit.com: No answer
+
+Authoritative answers can be found from:
+reddit.com
+	origin = ns-557.awsdns-05.net
+	mail addr = awsdns-hostmaster.amazon.com
+	serial = 1
+	refresh = 7200
+	retry = 900
+	expire = 1209600
+	minimum = 86400
 

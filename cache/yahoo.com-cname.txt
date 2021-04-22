@@ -1,0 +1,16 @@
+Server:		192.168.18.1
+Address:	192.168.18.1#53
+
+Non-authoritative answer:
+*** Can't find yahoo.com: No answer
+
+Authoritative answers can be found from:
+yahoo.com
+	origin = ns1.yahoo.com
+	mail addr = hostmaster.yahoo-inc.com
+	serial = 2021042203
+	refresh = 3600
+	retry = 300
+	expire = 1814400
+	minimum = 600
+

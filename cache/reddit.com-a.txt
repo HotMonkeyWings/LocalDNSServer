@@ -1,12 +1,13 @@
-Server:		ns-557.awsdns-05.net.
-Address:	205.251.194.45#53
+Server:		192.168.18.1
+Address:	192.168.18.1#53
 
-Name:	reddit.com
-Address: 151.101.129.140
+Non-authoritative answer:
 Name:	reddit.com
 Address: 151.101.193.140
 Name:	reddit.com
 Address: 151.101.65.140
 Name:	reddit.com
 Address: 151.101.1.140
+Name:	reddit.com
+Address: 151.101.129.140
 

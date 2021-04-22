@@ -1,0 +1,6 @@
+Server:		192.168.18.1
+Address:	192.168.18.1#53
+
+Non-authoritative answer:
+*** Can't find reddit.com: No answer
+

@@ -1,3 +1,13 @@
+/*
+ ████████                                    ██   ██            ██
+░██░░░░░                                    ░██  ░░            ░██
+░██        ██████  ██████  █████  ███████  ██████ ██  ██████   ░██  ██████
+░███████  ██░░░░  ██░░░░  ██░░░██░░██░░░██░░░██░ ░██ ░░░░░░██  ░██ ██░░░░
+░██░░░░  ░░█████ ░░█████ ░███████ ░██  ░██  ░██  ░██  ███████  ░██░░█████
+░██       ░░░░░██ ░░░░░██░██░░░░  ░██  ░██  ░██  ░██ ██░░░░██  ░██ ░░░░░██
+░████████ ██████  ██████ ░░██████ ███  ░██  ░░██ ░██░░████████ ███ ██████
+░░░░░░░░ ░░░░░░  ░░░░░░   ░░░░░░ ░░░   ░░    ░░  ░░  ░░░░░░░░ ░░░ ░░░░░░
+*/
 int StartsWith(const char *a, const char *b)
 {
    if(strncmp(a, b, strlen(b)) == 0) return 1;
@@ -119,7 +129,6 @@ void get_main_server(char result[100],char domain[100], char website[100], int t
    
 
     get_name_server(domain,w, nameserver);
-    printf("Name Server being used : %s\n\n", nameserver);
     strcat(cmd, nameserver);
     strcat(cmd, " > ");
     strcat(cmd, "cache/");
@@ -226,9 +235,9 @@ char *nslookup_handle(char result[100], char args[100], int type)
     strcpy(website_name, args);
 
     get_root_servers(root);
-    printf("Root DNS Server: %s\n\n", root);
+    //printf("Root DNS Server: %s\n\n", root);
 
     get_domain_server(domain, website,root);
-    printf("Domain DNS Server: %s\n\n", domain);
+    //printf("Domain DNS Server: %s\n\n", domain);
     get_main_server(result, domain, website_name, type);
 }
